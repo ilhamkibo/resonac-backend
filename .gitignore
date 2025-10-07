@@ -1,0 +1,32 @@
+# Ignore all log files
+*.log
+# Ignore all node_modules
+node_modules
+# Ignore all dist folder
+dist
+# Ignore all env files
+.env
+# Ignore all vs code
+.vscode
+# Ignore all coverage files
+coverage
+# Ignore all npm-debug.log files
+npm-debug.log
+# Ignore all package-lock.json files
+package-lock.json
+# Ignore all tsconfig.tsbuildinfo files
+tsconfig.tsbuildinfo
+# Ignore all .DS_Store files
+.DS_Store
+# Ignore all .git folder
+.git
+# Ignore all .idea folder
+.idea
+# Ignore all .vscode folder
+.vscode
+# Ignore all .next folder
+.next
+# Ignore all out folder
+out
+# Ignore all target folder
+target
