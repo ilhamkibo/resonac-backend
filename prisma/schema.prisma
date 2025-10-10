@@ -1,0 +1,119 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum errorStatus {
+  HIGH
+  LOW
+
+  @@map("error_status")
+}
+
+enum userRole {
+  admin
+  operator
+
+  @@map("user_role")
+}
+
+model User {
+  id             Int             @id @default(autoincrement())
+  username       String?         @unique
+  email          String?         @unique
+  name           String          
+  password_hash  String
+  role           userRole       @default(operator)
+  isApproved     Boolean         @default(false)   // ✅ belum aktif sebelum disetujui
+  created_at     DateTime        @default(now())
+  
+  manualInputs   ManualInput[]
+  errorHistories ErrorHistory[]  @relation("error_user_ack")
+
+  @@map("users")
+}
+
+model Threshold {
+  id             Int             @id @default(autoincrement())
+  area           String
+  parameter      String
+  lowerLimit     Float?          @map("lower_limit")
+  upperLimit     Float?          @map("upper_limit")
+  createdAt      DateTime        @default(now()) @map("created_at")
+  errorHistories ErrorHistory[]
+
+  @@map("thresholds")
+}
+
+model ErrorHistory {
+  id             Int        @default(autoincrement())
+  timestamp      DateTime
+  area           String
+  parameter      String
+  value          Float
+  thresholdId    Int?       @map("threshold_id")
+  status         errorStatus
+  acknowledged   Boolean    @default(false)
+  userAckId      Int?       @map("user_ack")
+
+  threshold      Threshold?  @relation(fields: [thresholdId], references: [id])
+  user           User?       @relation("error_user_ack", fields: [userAckId], references: [id])
+
+  @@id([id, timestamp])
+  @@map("error_history")
+}
+
+model ManualInput {
+  id          BigInt              @id @default(autoincrement())
+  userId      Int?                @map("user_id")
+  timestamp   DateTime?           @default(now())
+
+  user        User?               @relation(fields: [userId], references: [id])
+  details     ManualInputDetail[]
+
+  @@map("manual_inputs")
+}
+
+model ManualInputDetail {
+  id               BigInt          @id @default(autoincrement())
+  manualInputId    BigInt?         @map("manual_input_id")
+  area             String
+  ampere_r         Float?
+  ampere_s         Float?
+  ampere_t         Float?
+  volt_r           Float?
+  volt_s           Float?
+  volt_t           Float?
+  pf               Float?
+  kwh              Float?
+  oil_pressure     Float?
+  oil_temperature  Float?
+
+  manualInput      ManualInput?    @relation(fields: [manualInputId], references: [id])
+
+  @@map("manual_input_details")
+}
+
+model Measurement {
+  id              Int       @default(autoincrement())
+  timestamp       DateTime
+  area            String
+  ampere_rs       Float?
+  ampere_st       Float?
+  ampere_tr       Float?
+  volt_rs         Float?
+  volt_st         Float?
+  volt_tr         Float?
+  pf              Float?
+  kwh             Float?
+  oil_pressure    Float?
+  oil_temperature Float?
+
+  @@id([id, timestamp])
+  @@map("measurements")
+}

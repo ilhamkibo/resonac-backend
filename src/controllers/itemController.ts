@@ -1,5 +1,8 @@
 import { Request, Response, NextFunction } from 'express';
 import { items, Item } from '../lib/models/item';
+import { asyncHandler } from '../lib/utils/asyncHandler';
+import prisma from '../config/db';
+import { successResponse } from '../lib/response/response';
 
 // Create an item
 export const createItem = (req: Request, res: Response, next: NextFunction) => {
@@ -14,13 +17,15 @@ export const createItem = (req: Request, res: Response, next: NextFunction) => {
 };
 
 // Read all items
-export const getItems = (req: Request, res: Response, next: NextFunction) => {
-  try {
-    res.json(items);
-  } catch (error) {
-    next(error);
+export const getAllItems = asyncHandler(async (req: Request, res: Response) => {
+  const data = items;
+  if (!data) {
+    const error: any = new Error('Item not found');
+    error.statusCode = 404;
+    throw error;
   }
-};
+  return successResponse(res, 'Item list fetched successfully', data);
+});
 
 // Read single item
 export const getItemById = (

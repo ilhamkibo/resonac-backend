@@ -30,3 +30,5 @@ tsconfig.tsbuildinfo
 out
 # Ignore all target folder
 target
+
+/src/generated/prisma

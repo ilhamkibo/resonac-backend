@@ -13,12 +13,20 @@
   "license": "ISC",
   "description": "",
   "dependencies": {
+    "@prisma/client": "^6.17.0",
+    "bcrypt": "^6.0.0",
+    "cookie-parser": "^1.4.7",
     "dotenv": "^17.2.3",
     "express": "^5.1.0",
-    "pg": "^8.16.3"
+    "jsonwebtoken": "^9.0.2",
+    "pg": "^8.16.3",
+    "prisma": "^6.17.0",
+    "zod": "^3.23.8"
   },
   "devDependencies": {
+    "@types/bcrypt": "^6.0.0",
     "@types/express": "^5.0.3",
+    "@types/jsonwebtoken": "^9.0.10",
     "@types/node": "^24.6.2",
     "@types/pg": "^8.15.5",
     "eslint": "^9.36.0",
