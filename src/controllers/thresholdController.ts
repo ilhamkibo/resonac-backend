@@ -1,13 +1,13 @@
+// src/controllers/thresholdController.ts
 import { Request, Response } from 'express';
-import prisma from '../config/db';
-import { thresholdSchema } from '../lib/validators/thresholdValidator';
-import { successResponse } from '../lib/response/response';
 import { asyncHandler } from '../lib/utils/asyncHandler';
+import { successResponse } from '../lib/response/response';
+import * as thresholdService from '../services/thresholdService';
 
 // ✅ GET all
 export const getAllThresholds = asyncHandler(
   async (_req: Request, res: Response) => {
-    const data = await prisma.threshold.findMany({ orderBy: { id: 'asc' } });
+    const data = await thresholdService.getAllThresholds();
     return successResponse(res, 'Threshold list fetched successfully', data);
   },
 );
@@ -16,12 +16,7 @@ export const getAllThresholds = asyncHandler(
 export const getThresholdById = asyncHandler(
   async (req: Request, res: Response) => {
     const id = Number(req.params.id);
-    const data = await prisma.threshold.findUnique({ where: { id } });
-    if (!data) {
-      const error: any = new Error('Threshold not found');
-      error.statusCode = 404;
-      throw error;
-    }
+    const data = await thresholdService.getThresholdById(id);
     return successResponse(res, 'Threshold fetched successfully', data);
   },
 );
@@ -29,8 +24,7 @@ export const getThresholdById = asyncHandler(
 // ✅ CREATE
 export const createThreshold = asyncHandler(
   async (req: Request, res: Response) => {
-    const parsed = thresholdSchema.parse(req.body);
-    const newThreshold = await prisma.threshold.create({ data: parsed });
+    const newThreshold = await thresholdService.createThreshold(req.body);
     return successResponse(
       res,
       'Threshold created successfully',
@@ -44,11 +38,7 @@ export const createThreshold = asyncHandler(
 export const updateThreshold = asyncHandler(
   async (req: Request, res: Response) => {
     const id = Number(req.params.id);
-    const parsed = thresholdSchema.parse(req.body);
-    const updated = await prisma.threshold.update({
-      where: { id },
-      data: parsed,
-    });
+    const updated = await thresholdService.updateThreshold(id, req.body);
     return successResponse(res, 'Threshold updated successfully', updated);
   },
 );
@@ -57,7 +47,7 @@ export const updateThreshold = asyncHandler(
 export const deleteThreshold = asyncHandler(
   async (req: Request, res: Response) => {
     const id = Number(req.params.id);
-    await prisma.threshold.delete({ where: { id } });
+    await thresholdService.deleteThreshold(id);
     return successResponse(res, 'Threshold deleted successfully');
   },
 );

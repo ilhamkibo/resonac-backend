@@ -2,7 +2,9 @@ import { Router } from 'express';
 import {
   getLastHourAverages,
   getMeasurementsByInterval,
-} from '../../controllers/measurementController';
+  getMeasurementDataDashboard,
+  getMeasurementsDynamic,
+} from '../controllers/measurementController';
 // import {
 //   getAllMeasurements,
 //   getMeasurementById,
@@ -17,7 +19,9 @@ const router = Router();
 // router.get("/:id", getMeasurementById);
 
 // 🔹 Aggregated data
-router.get('/aggregate/last-hour', getLastHourAverages);
+router.get('/last-hour', getLastHourAverages);
 router.get('/aggregate', getMeasurementsByInterval);
+router.get('/dynamic', getMeasurementsDynamic);
+router.get('/dashboard', getMeasurementDataDashboard);
 
 export default router;

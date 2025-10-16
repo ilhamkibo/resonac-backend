@@ -5,7 +5,7 @@ import {
   getAllThresholds,
   getThresholdById,
   updateThreshold,
-} from '../../controllers/thresholdController';
+} from '../controllers/thresholdController';
 
 const router = Router();
 
