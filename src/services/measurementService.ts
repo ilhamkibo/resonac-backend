@@ -2,8 +2,12 @@
 import prisma from '../config/db';
 import { thresholdSchema } from '../lib/validators/thresholdValidator';
 
-export async function getMeasurementDataDashboard() {
-  return prisma.measurement.findMany({ orderBy: { id: 'desc' }, take: 50 });
+export async function getMeasurementDataDashboard(area: string = 'main') {
+  return prisma.measurement.findMany({
+    where: { area },
+    orderBy: { id: 'desc' },
+    take: 50,
+  });
 }
 
 export async function getThresholdById(id: number) {

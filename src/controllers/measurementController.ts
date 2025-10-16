@@ -7,8 +7,10 @@ import * as measurementService from '../services/measurementService';
 
 //Ambil data untuk dashboard
 export const getMeasurementDataDashboard = asyncHandler(
-  async (_req: Request, res: Response) => {
-    const data = await measurementService.getMeasurementDataDashboard();
+  async (req: Request, res: Response) => {
+    const { area } = req.query as { area?: string };
+
+    const data = await measurementService.getMeasurementDataDashboard(area);
     return successResponse(
       res,
       'Measurement data dashboard list fetched successfully',

@@ -2,8 +2,13 @@
 import prisma from '../config/db';
 import { thresholdSchema } from '../lib/validators/thresholdValidator';
 
-export async function getAllThresholds() {
-  return prisma.threshold.findMany({ orderBy: { id: 'asc' } });
+export async function getAllThresholds(area: string = 'all') {
+  const whereClause = area === 'all' ? {} : { area };
+
+  return prisma.threshold.findMany({
+    where: whereClause,
+    orderBy: { id: 'asc' },
+  });
 }
 
 export async function getThresholdById(id: number) {
@@ -18,6 +23,18 @@ export async function getThresholdById(id: number) {
 
 export async function createThreshold(data: any) {
   const parsed = thresholdSchema.parse(data);
+  const existingThreshold = await prisma.threshold.findFirst({
+    where: {
+      area: parsed.area,
+      parameter: parsed.parameter,
+    },
+  });
+
+  if (existingThreshold) {
+    const error: any = new Error('Threshold already exists');
+    error.statusCode = 400;
+    throw error;
+  }
   return prisma.threshold.create({ data: parsed });
 }
 

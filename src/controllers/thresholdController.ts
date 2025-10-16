@@ -6,8 +6,10 @@ import * as thresholdService from '../services/thresholdService';
 
 // ✅ GET all
 export const getAllThresholds = asyncHandler(
-  async (_req: Request, res: Response) => {
-    const data = await thresholdService.getAllThresholds();
+  async (req: Request, res: Response) => {
+    const { area } = req.query as { area?: string };
+
+    const data = await thresholdService.getAllThresholds(area);
     return successResponse(res, 'Threshold list fetched successfully', data);
   },
 );

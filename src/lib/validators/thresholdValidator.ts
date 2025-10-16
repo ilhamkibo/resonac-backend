@@ -1,8 +1,10 @@
 // thresholdSchema.ts
 import { z } from 'zod';
 
+const AreaValues = ['main', 'pilot', 'oil'] as const;
+
 export const thresholdSchema = z.object({
-  area: z.string().min(1, 'Area harus diisi'),
+  area: z.enum(AreaValues),
   parameter: z.string().min(1, 'Parameter harus diisi'),
   lowerLimit: z.number({
     required_error: 'lowerLimit harus diisi',
