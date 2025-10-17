@@ -1,10 +1,7 @@
 import express from 'express';
-import itemRoutes from './routes/itemRoutes';
 import { errorHandler } from './lib/middlewares/errorHandler';
-import thresholdRoutes from './routes/thresholdRoutes';
-import authRoutes from './routes/authRoutes';
-import measurementRoutes from './routes/measurementRoute';
 import cors from 'cors';
+import apiRoutes from './routes/index'; // ✨ Impor router induk
 
 const app = express();
 
@@ -25,11 +22,8 @@ app.use(
 
 app.use(express.json());
 
-// Routes
-app.use('/api/items', itemRoutes);
-app.use('/api/thresholds', thresholdRoutes);
-app.use('/api/auth', authRoutes);
-app.use('/api/measurements', measurementRoutes);
+// Semua rute yang ada di dalam apiRoutes akan otomatis memiliki prefix '/api'
+app.use('/api', apiRoutes);
 
 // Global error handler (should be after routes)
 app.use(errorHandler);

@@ -24,8 +24,7 @@ enum userRole {
 
 model User {
   id             Int             @id @default(autoincrement())
-  username       String?         @unique
-  email          String?         @unique
+  email          String         @unique
   name           String          
   password_hash  String
   role           userRole       @default(operator)

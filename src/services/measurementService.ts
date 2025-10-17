@@ -2,11 +2,14 @@
 import prisma from '../config/db';
 import { thresholdSchema } from '../lib/validators/thresholdValidator';
 
-export async function getMeasurementDataDashboard(area: string = 'main') {
+export async function getMeasurementDataDashboard(area: string = 'all') {
+  const whereClause = area == 'all' ? {} : { area };
+  const limitClause = area == 'all' ? 150 : 50;
+
   return prisma.measurement.findMany({
-    where: { area },
+    where: whereClause,
     orderBy: { id: 'desc' },
-    take: 50,
+    take: limitClause,
   });
 }
 

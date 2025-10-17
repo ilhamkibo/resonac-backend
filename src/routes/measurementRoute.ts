@@ -19,9 +19,9 @@ const router = Router();
 // router.get("/:id", getMeasurementById);
 
 // 🔹 Aggregated data
+router.get('/dashboard', getMeasurementDataDashboard);
 router.get('/last-hour', getLastHourAverages);
 router.get('/aggregate', getMeasurementsByInterval);
 router.get('/dynamic', getMeasurementsDynamic);
-router.get('/dashboard', getMeasurementDataDashboard);
 
 export default router;

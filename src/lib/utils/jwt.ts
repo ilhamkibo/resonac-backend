@@ -1,22 +1,27 @@
 import jwt from 'jsonwebtoken';
 
-const ACCESS_TOKEN_SECRET = process.env.JWT_ACCESS_SECRET || 'access_secret';
+// const ACCESS_TOKEN_SECRET = process.env.JWT_ACCESS_SECRET || 'access_secret';
+
+const ACCESS_TOKEN_SECRET = 'resonacaccestoken25';
 const REFRESH_TOKEN_SECRET = process.env.JWT_REFRESH_SECRET || 'refresh_secret';
 
-export const generateAccessToken = (userId: number) => {
-  return jwt.sign({ userId }, ACCESS_TOKEN_SECRET, { expiresIn: '15m' }); // 15 menit
-};
+interface JwtPayload {
+  userId: number;
+  role: string;
+  email: string;
+}
+export const generateAccessToken = (
+  userId: number,
+  role: string,
+  email: string,
+) => {
+  const payload: JwtPayload = { userId, role, email };
 
-export const generateRefreshToken = (userId: number, rememberMe = false) => {
-  return jwt.sign({ userId }, REFRESH_TOKEN_SECRET, {
-    expiresIn: rememberMe ? '7d' : '1d', // 7 hari kalau rememberMe true
+  return jwt.sign(payload, ACCESS_TOKEN_SECRET, {
+    expiresIn: '15m',
   });
 };
 
 export const verifyAccessToken = (token: string) => {
   return jwt.verify(token, ACCESS_TOKEN_SECRET);
-};
-
-export const verifyRefreshToken = (token: string) => {
-  return jwt.verify(token, REFRESH_TOKEN_SECRET);
 };
