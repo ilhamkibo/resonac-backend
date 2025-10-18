@@ -64,5 +64,7 @@ export const registerUser = async (input: RegisterSchema) => {
     },
   });
 
-  return user;
+  const { password_hash: _, ...userWithoutPassword } = user;
+
+  return userWithoutPassword;
 };

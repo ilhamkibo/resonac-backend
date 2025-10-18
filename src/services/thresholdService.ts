@@ -1,10 +1,12 @@
 // src/services/thresholdService.ts
 import prisma from '../config/db';
-import { thresholdSchema } from '../lib/validators/thresholdValidator';
+import {
+  CreateThresholdInput,
+  UpdateThresholdInput,
+} from '../lib/validators/thresholdValidator';
 
-export async function getAllThresholds(area: string = 'all') {
-  const whereClause = area === 'all' ? {} : { area };
-
+export async function getAllThresholds(area?: 'main' | 'pilot' | 'oil') {
+  const whereClause = area ? { area } : {};
   return prisma.threshold.findMany({
     where: whereClause,
     orderBy: { id: 'asc' },
@@ -21,13 +23,9 @@ export async function getThresholdById(id: number) {
   return data;
 }
 
-export async function createThreshold(data: any) {
-  const parsed = thresholdSchema.parse(data);
+export async function createThreshold(data: CreateThresholdInput) {
   const existingThreshold = await prisma.threshold.findFirst({
-    where: {
-      area: parsed.area,
-      parameter: parsed.parameter,
-    },
+    where: { area: data.area, parameter: data.parameter },
   });
 
   if (existingThreshold) {
@@ -35,12 +33,11 @@ export async function createThreshold(data: any) {
     error.statusCode = 400;
     throw error;
   }
-  return prisma.threshold.create({ data: parsed });
+  return prisma.threshold.create({ data });
 }
 
-export async function updateThreshold(id: number, data: any) {
-  const parsed = thresholdSchema.parse(data);
-  return prisma.threshold.update({ where: { id }, data: parsed });
+export async function updateThreshold(id: number, data: UpdateThresholdInput) {
+  return prisma.threshold.update({ where: { id }, data });
 }
 
 export async function deleteThreshold(id: number) {

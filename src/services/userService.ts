@@ -1,16 +1,9 @@
 import prisma from '../config/db';
 import { Prisma } from '../generated/prisma';
-
-// Tipe untuk query parameter API (tidak ada perubahan)
-export interface UserQuery {
-  status?: 'approved' | 'unapproved' | 'all';
-  role?: string;
-  page?: string;
-  limit?: string;
-}
+import { UpdateUserInput, UserQuery } from '../lib/validators/userValidator';
 
 // Fungsi utama (tidak ada perubahan, sudah benar)
-export async function getAllUsers(query: UserQuery = {}) {
+export async function getAllUsers(query: UserQuery) {
   const page = parseInt(query.page || '1');
   const limit = parseInt(query.limit || '10');
   const skip = (page - 1) * limit;
@@ -25,7 +18,7 @@ export async function getAllUsers(query: UserQuery = {}) {
     where.isApproved = true;
   } else if (query.status === 'unapproved') {
     where.isApproved = false;
-  } else if (!query.status) {
+  } else {
     where.isApproved = true;
   }
 
@@ -39,9 +32,12 @@ export async function getAllUsers(query: UserQuery = {}) {
   });
 
   const totalUsers = await prisma.user.count({ where });
-
+  const usersWithoutPassword = users.map((user) => {
+    const { password_hash, ...rest } = user;
+    return rest;
+  });
   return {
-    data: users,
+    data: usersWithoutPassword,
     pagination: {
       page,
       limit,
@@ -53,4 +49,12 @@ export async function getAllUsers(query: UserQuery = {}) {
 
 export async function getUserById(id: number) {
   return prisma.user.findUnique({ where: { id } });
+}
+
+export async function updateUser(id: number, userData: UpdateUserInput) {
+  return prisma.user.update({ where: { id }, data: userData });
+}
+
+export async function deleteUser(id: number) {
+  return prisma.user.delete({ where: { id } });
 }

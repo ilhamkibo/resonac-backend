@@ -3,19 +3,23 @@ import { Request, Response } from 'express';
 import { asyncHandler } from '../lib/utils/asyncHandler';
 import { successResponse } from '../lib/response/response';
 import * as thresholdService from '../services/thresholdService';
+import {
+  createThresholdSchema,
+  updateThresholdSchema,
+  getThresholdsQuerySchema,
+} from '../lib/validators/thresholdValidator';
 
 // ✅ GET all
-export const getAllThresholds = asyncHandler(
+export const handleGetAllThresholds = asyncHandler(
   async (req: Request, res: Response) => {
-    const { area } = req.query as { area?: string };
-
-    const data = await thresholdService.getAllThresholds(area);
+    const query = getThresholdsQuerySchema.parse(req.query);
+    const data = await thresholdService.getAllThresholds(query.area);
     return successResponse(res, 'Threshold list fetched successfully', data);
   },
 );
 
 // ✅ GET by ID
-export const getThresholdById = asyncHandler(
+export const handleGetThresholdById = asyncHandler(
   async (req: Request, res: Response) => {
     const id = Number(req.params.id);
     const data = await thresholdService.getThresholdById(id);
@@ -24,9 +28,12 @@ export const getThresholdById = asyncHandler(
 );
 
 // ✅ CREATE
-export const createThreshold = asyncHandler(
+export const handleCreateThreshold = asyncHandler(
   async (req: Request, res: Response) => {
-    const newThreshold = await thresholdService.createThreshold(req.body);
+    // Validasi body menggunakan Zod
+    const validationBody = createThresholdSchema.parse(req.body);
+
+    const newThreshold = await thresholdService.createThreshold(validationBody);
     return successResponse(
       res,
       'Threshold created successfully',
@@ -37,18 +44,25 @@ export const createThreshold = asyncHandler(
 );
 
 // ✅ UPDATE
-export const updateThreshold = asyncHandler(
+export const handleUpdateThreshold = asyncHandler(
   async (req: Request, res: Response) => {
-    const id = Number(req.params.id);
-    const updated = await thresholdService.updateThreshold(id, req.body);
+    const id = Number(req.params.id); // Idealnya ini juga divalidasi Zod
+
+    const validatedBody = updateThresholdSchema.parse(req.body);
+
+    const updated = await thresholdService.updateThreshold(id, validatedBody);
     return successResponse(res, 'Threshold updated successfully', updated);
   },
 );
-
 // ✅ DELETE
-export const deleteThreshold = asyncHandler(
+export const handleDeleteThreshold = asyncHandler(
   async (req: Request, res: Response) => {
     const id = Number(req.params.id);
+    if (isNaN(id)) {
+      const error: any = new Error('ID must be a number');
+      error.statusCode = 400;
+      throw error;
+    }
     await thresholdService.deleteThreshold(id);
     return successResponse(res, 'Threshold deleted successfully');
   },
