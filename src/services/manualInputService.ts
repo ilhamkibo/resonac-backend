@@ -16,7 +16,10 @@ import {
   endOfMonth,
   addDays,
   subDays,
-  subHours,
+  setHours,
+  setMinutes,
+  setSeconds,
+  setMilliseconds,
 } from 'date-fns';
 
 /**
@@ -160,9 +163,36 @@ export async function findMany(query: GetManualInputsQuery) {
   const { period, startDate, endDate } = query;
   if (period) {
     const now = new Date();
-    if (period === 'daily')
-      where.timestamp = { gte: startOfDay(now), lte: endOfDay(now) };
-    //   where.timestamp = { gte: subHours(now, 24), lte: now };
+
+    if (period === 'daily') {
+      const hour = now.getHours();
+      let start, end;
+
+      if (hour < 8) {
+        // Kalau masih sebelum jam 08:00 → ambil 08:00 kemarin s/d 08:00 hari ini
+        start = setMilliseconds(
+          setSeconds(setMinutes(setHours(subDays(now, 1), 8), 0), 0),
+          0,
+        );
+        end = setMilliseconds(
+          setSeconds(setMinutes(setHours(now, 8), 0), 0),
+          0,
+        );
+      } else {
+        // Kalau sudah lewat jam 08:00 → ambil 08:00 hari ini s/d 08:00 besok
+        start = setMilliseconds(
+          setSeconds(setMinutes(setHours(now, 8), 0), 0),
+          0,
+        );
+        end = setMilliseconds(
+          setSeconds(setMinutes(setHours(addDays(now, 1), 8), 0), 0),
+          0,
+        );
+      }
+
+      where.timestamp = { gte: start, lte: end };
+    }
+
     if (period === 'weekly')
       where.timestamp = { gte: startOfWeek(now), lte: endOfWeek(now) };
     if (period === 'monthly')

@@ -1,12 +1,20 @@
 import { z } from 'zod';
+import {
+  aggregateSchema,
+  areaSchema,
+  periodSchema,
+  resolutionSchema,
+} from './commonSchemas';
 
-export const dynamicMeasurementSchema = z.object({
-  aggregate: z.enum(['none', 'avg', 'min', 'max']).default('none'),
-  bucket: z.string().default('1 minute'),
-  duration: z.string().optional(), // <--- hapus default '1 day'
-  startDate: z.string().optional(),
-  endDate: z.string().optional(),
-  limit: z.string().optional(),
-  order: z.enum(['asc', 'desc']).default('desc'),
-  area: z.string().default('main'),
+// src/lib/validators/measurementValidator.ts
+
+export const measurementQuerySchema = z.object({
+  area: areaSchema.optional(),
+  period: periodSchema.optional(),
+  startDate: z.coerce.date().optional(),
+  endDate: z.coerce.date().optional(),
+  aggregate: aggregateSchema.optional(),
+  resolution: resolutionSchema.optional(),
 });
+
+export type MeasurementQuery = z.infer<typeof measurementQuerySchema>;
