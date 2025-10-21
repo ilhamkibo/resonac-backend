@@ -1,6 +1,6 @@
 import prisma from '../config/db';
 import bcrypt from 'bcrypt';
-import { LoginSchema, RegisterSchema } from '../lib/validators/authValidator';
+import { LoginSchema, RegisterSchema } from '../validators/authValidator';
 import { generateAccessToken } from '../lib/utils/jwt';
 
 export const loginUser = async (input: LoginSchema) => {
@@ -49,6 +49,11 @@ export const registerUser = async (input: RegisterSchema) => {
 
   if (existingUser) {
     throw new Error('Email sudah terdaftar');
+  }
+
+  const totalUser = await prisma.user.count();
+  if (totalUser >= 10) {
+    throw new Error('Pendaftaran sudah penuh');
   }
 
   // Hash password

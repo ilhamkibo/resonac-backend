@@ -7,7 +7,7 @@ import {
   createThresholdSchema,
   updateThresholdSchema,
   getThresholdsQuerySchema,
-} from '../lib/validators/thresholdValidator';
+} from '../validators/thresholdValidator';
 
 // ✅ GET all
 export const handleGetAllThresholds = asyncHandler(

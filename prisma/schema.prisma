@@ -70,10 +70,10 @@ model ErrorHistory {
 model ManualInput {
   id          BigInt              @id @default(autoincrement())
   userId      Int?                @map("user_id")
-  timestamp   DateTime?           @default(now())
+  timestamp   DateTime?      @default(now()) @db.Timestamptz
 
   user        User?               @relation(fields: [userId], references: [id])
-  details     ManualInputDetail[]
+  details     ManualInputDetail[]   @relation("ManualInputToDetails")
 
   @@map("manual_inputs")
 }
@@ -92,9 +92,8 @@ model ManualInputDetail {
   kwh              Float?
   oil_pressure     Float?
   oil_temperature  Float?
-
-  manualInput      ManualInput?    @relation(fields: [manualInputId], references: [id])
-
+  manualInput     ManualInput?   @relation("ManualInputToDetails", fields: [manualInputId], references: [id], onDelete: Cascade)
+  
   @@map("manual_input_details")
 }
 

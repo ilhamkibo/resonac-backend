@@ -2,10 +2,7 @@ import { Request, Response } from 'express';
 import * as userService from '../services/userService';
 import { asyncHandler } from '../lib/utils/asyncHandler';
 import { successResponse } from '../lib/response/response';
-import {
-  updateUserSchema,
-  userQuerySchema,
-} from '../lib/validators/userValidator';
+import { updateUserSchema, userQuerySchema } from '../validators/userValidator';
 
 export const handleGetAllUsers = asyncHandler(
   async (req: Request, res: Response) => {
@@ -42,10 +39,28 @@ export const handleUpdateUser = asyncHandler(
       throw error;
     }
 
+    console.log('Request Body Diterima:', req.body);
+
     // Validasi body menggunakan Zod
     const validatedBody = updateUserSchema.parse(req.body);
 
     const result = await userService.updateUser(id, validatedBody);
     return successResponse(res, 'User updated successfully', result, 200);
+  },
+);
+
+export const handleDeleteUser = asyncHandler(
+  async (req: Request, res: Response) => {
+    const id = Number(req.params.id);
+
+    if (isNaN(id)) {
+      // Anda bisa melempar error custom di sini juga
+      const error: any = new Error('ID must be a number');
+      error.statusCode = 400;
+      throw error;
+    }
+
+    await userService.deleteUser(id);
+    return successResponse(res, 'User deleted successfully');
   },
 );

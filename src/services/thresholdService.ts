@@ -3,7 +3,7 @@ import prisma from '../config/db';
 import {
   CreateThresholdInput,
   UpdateThresholdInput,
-} from '../lib/validators/thresholdValidator';
+} from '../validators/thresholdValidator';
 
 export async function getAllThresholds(area?: 'main' | 'pilot' | 'oil') {
   const whereClause = area ? { area } : {};

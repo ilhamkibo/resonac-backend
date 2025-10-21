@@ -1,7 +1,7 @@
 import { Request, Response } from 'express';
 import prisma from '../config/db';
 import { successResponse, errorResponse } from '../lib/response/response';
-import { dynamicMeasurementSchema } from '../lib/validators/measurementValidator';
+import { dynamicMeasurementSchema } from '../validators/measurementValidator';
 import { asyncHandler } from '../lib/utils/asyncHandler';
 import * as measurementService from '../services/measurementService';
 

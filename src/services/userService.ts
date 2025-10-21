@@ -1,6 +1,6 @@
 import prisma from '../config/db';
 import { Prisma } from '../generated/prisma';
-import { UpdateUserInput, UserQuery } from '../lib/validators/userValidator';
+import { UpdateUserInput, UserQuery } from '../validators/userValidator';
 
 // Fungsi utama (tidak ada perubahan, sudah benar)
 export async function getAllUsers(query: UserQuery) {
@@ -36,15 +36,17 @@ export async function getAllUsers(query: UserQuery) {
     const { password_hash, ...rest } = user;
     return rest;
   });
-  return {
-    data: usersWithoutPassword,
-    pagination: {
-      page,
-      limit,
-      total: totalUsers,
-      totalPages: Math.ceil(totalUsers / limit),
-    },
-  };
+  // return {
+  //   data: usersWithoutPassword,
+  //   // pagination: {
+  //   //   page,
+  //   //   limit,
+  //   //   total: totalUsers,
+  //   //   totalPages: Math.ceil(totalUsers / limit),
+  //   // },
+  // };
+
+  return usersWithoutPassword;
 }
 
 export async function getUserById(id: number) {

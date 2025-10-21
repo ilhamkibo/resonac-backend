@@ -1,11 +1,10 @@
 // thresholdSchema.ts
 import { z } from 'zod';
-
-const AreaValues = ['main', 'pilot', 'oil'] as const;
+import { areaSchema } from './commonSchemas';
 
 // Skema dasar yang bisa kita gunakan kembali
 const baseThresholdSchema = z.object({
-  area: z.enum(AreaValues),
+  area: areaSchema,
   parameter: z.string().min(1, 'Parameter harus diisi'),
   lowerLimit: z.number({
     required_error: 'lowerLimit harus diisi',
@@ -25,7 +24,7 @@ export const updateThresholdSchema = baseThresholdSchema.partial();
 
 // Skema untuk memvalidasi query parameter
 export const getThresholdsQuerySchema = z.object({
-  area: z.enum(AreaValues).optional(),
+  area: areaSchema.optional(),
 });
 
 // Tipe yang di-generate

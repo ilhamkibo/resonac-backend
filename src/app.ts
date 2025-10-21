@@ -3,6 +3,10 @@ import { errorHandler } from './lib/middlewares/errorHandler';
 import cors from 'cors';
 import apiRoutes from './routes/index'; // ✨ Impor router induk
 
+(BigInt.prototype as any).toJSON = function () {
+  return this.toString();
+};
+
 const app = express();
 
 const allowedOrigins = ['http://localhost:3000', 'http://192.168.245.102:3000'];
