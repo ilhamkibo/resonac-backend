@@ -1,20 +1,32 @@
 import { z } from 'zod';
-import {
-  aggregateSchema,
-  areaSchema,
-  periodSchema,
-  resolutionSchema,
-} from './commonSchemas';
 
-// src/lib/validators/measurementValidator.ts
+// Skema ini sekarang langsung memvalidasi isi dari req.query
+export const getMeasurementsQuerySchema = z
+  .object({
+    aggregationType: z.enum(['avg', 'min', 'max']),
+    period: z.enum(['hour', 'day', 'week', 'month']).optional(),
+    startDate: z.string().datetime().optional(),
+    endDate: z.string().datetime().optional(),
+    areas: z
+      .string()
+      .optional()
+      .transform((val) => (val ? val.split(',') : undefined)),
+  })
+  .refine(
+    (data) => {
+      // Logika refine tetap sama, tapi sekarang langsung di level query
+      return (
+        (data.period && !data.startDate && !data.endDate) ||
+        (!data.period && data.startDate && data.endDate)
+      );
+    },
+    {
+      message:
+        "Please provide either 'period' or both 'startDate' and 'endDate'.",
+      // Path bisa ditambahkan agar error lebih jelas
+      path: ['period'],
+    },
+  );
 
-export const measurementQuerySchema = z.object({
-  area: areaSchema.optional(),
-  period: periodSchema.optional(),
-  startDate: z.coerce.date().optional(),
-  endDate: z.coerce.date().optional(),
-  aggregate: aggregateSchema.optional(),
-  resolution: resolutionSchema.optional(),
-});
-
-export type MeasurementQuery = z.infer<typeof measurementQuerySchema>;
+// Ubah juga nama Type agar sesuai
+export type GetMeasurementsQuery = z.infer<typeof getMeasurementsQuerySchema>;
