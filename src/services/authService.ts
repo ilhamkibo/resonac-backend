@@ -16,7 +16,9 @@ export const loginUser = async (input: LoginSchema) => {
   // Cek user ada dan password cocok
   if (!user || !(await bcrypt.compare(password, user.password_hash))) {
     // Pesan error sengaja dibuat sama untuk mencegah user enumeration
-    throw new Error('Email atau password salah');
+    const error: any = new Error('Email atau password salah');
+    error.statusCode = 401;
+    throw error;
   }
 
   // Cek account sudah disetujui atau belum
@@ -25,7 +27,12 @@ export const loginUser = async (input: LoginSchema) => {
   }
 
   // 4. ✅ [BEST PRACTICE] Buat token langsung di sini
-  const accessToken = generateAccessToken(user.id, user.role, user.email);
+  const accessToken = generateAccessToken(
+    user.id,
+    user.role,
+    user.email,
+    user.name,
+  );
 
   // 5. Hapus password dari objek user sebelum dikirim kembali
   const { password_hash: _, ...userWithoutPassword } = user;
@@ -48,7 +55,9 @@ export const registerUser = async (input: RegisterSchema) => {
   });
 
   if (existingUser) {
-    throw new Error('Email sudah terdaftar');
+    const error: any = new Error('Email sudah terdaftar! Silahkan login.');
+    error.statusCode = 409;
+    throw error;
   }
 
   const totalUser = await prisma.user.count();

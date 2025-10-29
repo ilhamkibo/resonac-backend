@@ -210,8 +210,8 @@ export async function findMany(query: GetManualInputsQuery) {
   const [data, total] = await prisma.$transaction([
     prisma.manualInput.findMany({
       where,
-      //   skip,
-      //   take: limit,
+      skip,
+      take: limit,
       orderBy: { timestamp: 'desc' },
       // Sertakan data detail dalam hasil query.
       include: {
@@ -221,8 +221,8 @@ export async function findMany(query: GetManualInputsQuery) {
     prisma.manualInput.count({ where }),
   ]);
 
-  return data;
-  //   {
-  //     meta: { total, page, limit, totalPages: Math.ceil(total / limit) },
-  //   };
+  return {
+    data,
+    meta: { total, page, limit, totalPages: Math.ceil(total / limit) },
+  };
 }

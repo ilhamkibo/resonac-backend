@@ -1,21 +1,22 @@
 import jwt from 'jsonwebtoken';
 
-// const ACCESS_TOKEN_SECRET = process.env.JWT_ACCESS_SECRET || 'access_secret';
-
-const ACCESS_TOKEN_SECRET = 'resonacaccestoken25';
-const REFRESH_TOKEN_SECRET = process.env.JWT_REFRESH_SECRET || 'refresh_secret';
+const ACCESS_TOKEN_SECRET =
+  process.env.JWT_ACCESS_SECRET || 'resonacaccestoken25';
+// const REFRESH_TOKEN_SECRET = process.env.JWT_REFRESH_SECRET || 'refresh_secret';
 
 interface JwtPayload {
   userId: number;
   role: string;
   email: string;
+  name: string;
 }
 export const generateAccessToken = (
   userId: number,
   role: string,
   email: string,
+  name: string,
 ) => {
-  const payload: JwtPayload = { userId, role, email };
+  const payload: JwtPayload = { userId, role, email, name };
 
   return jwt.sign(payload, ACCESS_TOKEN_SECRET, {
     expiresIn: '15m',

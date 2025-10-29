@@ -8,7 +8,6 @@ export const redirectIfLoggedIn = (
 ) => {
   const authHeader = req.headers['authorization'];
   const token = authHeader && authHeader.split(' ')[1];
-  console.log('🚀 ~ redirectIfLoggedIn ~ token:', token);
 
   // Jika tidak ada token, berarti pengguna adalah tamu, biarkan lanjut
   if (token == null) {
