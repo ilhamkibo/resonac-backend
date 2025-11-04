@@ -36,17 +36,15 @@ export async function getAllUsers(query: UserQuery) {
     const { password_hash, ...rest } = user;
     return rest;
   });
-  // return {
-  //   data: usersWithoutPassword,
-  //   // pagination: {
-  //   //   page,
-  //   //   limit,
-  //   //   total: totalUsers,
-  //   //   totalPages: Math.ceil(totalUsers / limit),
-  //   // },
-  // };
-
-  return usersWithoutPassword;
+  return {
+    data: usersWithoutPassword,
+    pagination: {
+      page,
+      limit,
+      total: totalUsers,
+      totalPages: Math.ceil(totalUsers / limit),
+    },
+  };
 }
 
 export async function getUserById(id: number) {
@@ -59,4 +57,15 @@ export async function updateUser(id: number, userData: UpdateUserInput) {
 
 export async function deleteUser(id: number) {
   return prisma.user.delete({ where: { id } });
+}
+
+export async function getUserStats() {
+  const userCount = await prisma.user.count();
+  const approvedUserCount = await prisma.user.count({
+    where: { isApproved: true },
+  });
+  const unapprovedUserCount = await prisma.user.count({
+    where: { isApproved: false },
+  });
+  return { userCount, approvedUserCount, unapprovedUserCount };
 }

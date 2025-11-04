@@ -64,3 +64,10 @@ export const handleDeleteUser = asyncHandler(
     return successResponse(res, 'User deleted successfully');
   },
 );
+
+export const handleGetUserStats = asyncHandler(
+  async (req: Request, res: Response) => {
+    const result = await userService.getUserStats();
+    return successResponse(res, 'User stats fetched successfully', result, 200);
+  },
+);
