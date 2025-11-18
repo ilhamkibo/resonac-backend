@@ -139,6 +139,7 @@ export async function create(payload: CreateManualInputPayload) {
  * @param query Parameter query yang sudah divalidasi oleh Zod.
  * @returns Daftar data beserta metadata untuk pagination.
  */
+
 export async function findMany(query: GetManualInputsQuery) {
   // Siapkan objek 'where' yang akan dibangun secara dinamis.
   const where: Prisma.ManualInputWhereInput = {};
@@ -216,13 +217,22 @@ export async function findMany(query: GetManualInputsQuery) {
       // Sertakan data detail dalam hasil query.
       include: {
         details: true,
+        user: true, // penting
       },
     }),
     prisma.manualInput.count({ where }),
   ]);
 
+  // --- Mapping response ---
+  const mappedData = data.map((item) => ({
+    id: item.id,
+    username: item.user?.name ?? null, // tampilkan nama sebagai 'username'
+    timestamp: item.timestamp,
+    details: item.details,
+  }));
+
   return {
-    data,
+    data: mappedData,
     meta: { total, page, limit, totalPages: Math.ceil(total / limit) },
   };
 }

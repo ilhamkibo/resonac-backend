@@ -1,8 +1,12 @@
 import { Router } from 'express';
-import { handleGetHistoryError } from '../controllers/errorHistoryController';
+import {
+  handleGetErrorHistoryComparison,
+  handleGetHistoryError,
+} from '../controllers/errorHistoryController';
 
 const router = Router();
 
 router.get('/', handleGetHistoryError);
+router.get('/compare', handleGetErrorHistoryComparison);
 
 export default router;
