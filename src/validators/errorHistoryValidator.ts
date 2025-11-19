@@ -11,7 +11,7 @@ export const errorHistoryQuerySchema = z
     period: periodSchema.optional(),
     startDate: z.coerce.date().optional(),
     endDate: z.coerce.date().optional(),
-    area: areaSchema.optional().default('main'),
+    area: areaSchema.optional(),
     parameter: z
       .string()
       .optional()
@@ -40,18 +40,18 @@ export const errorHistoryQuerySchema = z
       !modifiedData.startDate &&
       !modifiedData.endDate
     ) {
-      modifiedData.period = 'daily';
+      modifiedData.period = 'monthly';
     }
     if (modifiedData.startDate && !modifiedData.endDate) {
       modifiedData.endDate = new Date(); // Default ke waktu sekarang
     }
-    if (!modifiedData.parameter) {
-      if (modifiedData.area === 'oil') {
-        modifiedData.parameter = 'temp';
-      } else {
-        modifiedData.parameter = 'pressure';
-      }
-    }
+    // if (!modifiedData.parameter) {
+    //   if (modifiedData.area === 'oil') {
+    //     modifiedData.parameter = 'temp';
+    //   } else {
+    //     modifiedData.parameter = 'pressure';
+    //   }
+    // }
 
     return modifiedData;
   });

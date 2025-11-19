@@ -54,6 +54,7 @@ export async function getHistoryError(query: ErrorHistoryQuery) {
       skip,
       take,
       orderBy: { timestamp: 'desc' },
+      include: { threshold: true },
     }),
     prisma.errorHistory.count({ where }),
   ]);
