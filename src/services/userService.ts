@@ -38,7 +38,7 @@ export async function getAllUsers(query: UserQuery) {
   });
   return {
     data: usersWithoutPassword,
-    pagination: {
+    meta: {
       page,
       limit,
       total: totalUsers,

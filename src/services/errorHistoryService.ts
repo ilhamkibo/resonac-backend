@@ -80,50 +80,6 @@ export async function getHistoryError(query: ErrorHistoryQuery) {
   return data;
 }
 
-// export async function getErrorHistoryComparison() {
-//   const now = new Date();
-
-//   // === WEEKLY ===
-//   const thisWeekStart = startOfWeek(now);
-//   const thisWeekEnd = endOfWeek(now);
-
-//   const lastWeekStart = startOfWeek(subWeeks(now, 1));
-//   const lastWeekEnd = endOfWeek(subWeeks(now, 1));
-
-//   // === MONTHLY ===
-//   const thisMonthStart = startOfMonth(now);
-//   const thisMonthEnd = endOfMonth(now);
-
-//   const lastMonthStart = startOfMonth(subMonths(now, 1));
-//   const lastMonthEnd = endOfMonth(subMonths(now, 1));
-
-//   const [thisWeek, lastWeek, thisMonth, lastMonth] = await prisma.$transaction([
-//     prisma.errorHistory.count({
-//       where: { timestamp: { gte: thisWeekStart, lte: thisWeekEnd } },
-//     }),
-//     prisma.errorHistory.count({
-//       where: { timestamp: { gte: lastWeekStart, lte: lastWeekEnd } },
-//     }),
-//     prisma.errorHistory.count({
-//       where: { timestamp: { gte: thisMonthStart, lte: thisMonthEnd } },
-//     }),
-//     prisma.errorHistory.count({
-//       where: { timestamp: { gte: lastMonthStart, lte: lastMonthEnd } },
-//     }),
-//   ]);
-
-//   return {
-//     weekly: {
-//       thisWeek,
-//       lastWeek,
-//     },
-//     monthly: {
-//       thisMonth,
-//       lastMonth,
-//     },
-//   };
-// }
-
 type AreaGroup = {
   area: string | null;
   _count: { area: number };
