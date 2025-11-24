@@ -21,6 +21,7 @@ import {
   setSeconds,
   setMilliseconds,
 } from 'date-fns';
+import { Parser } from 'json2csv';
 
 /**
  * Membuat entri manual input baru beserta detailnya.
@@ -235,4 +236,187 @@ export async function findMany(query: GetManualInputsQuery) {
     data: mappedData,
     meta: { total, page, limit, totalPages: Math.ceil(total / limit) },
   };
+}
+
+// export async function exportCsv(query: GetManualInputsQuery) {
+//   const where: Prisma.ManualInputWhereInput = {};
+
+//   if (query.userId) {
+//     where.userId = query.userId;
+//   }
+
+//   if (query.area) {
+//     where.details = { some: { area: query.area } };
+//   }
+
+//   const { period, startDate, endDate } = query;
+//   if (period) {
+//     const now = new Date();
+//     if (period === 'daily') {
+//       const hour = now.getHours();
+//       let start, end;
+//       if (hour < 8) {
+//         start = setMilliseconds(
+//           setSeconds(setMinutes(setHours(subDays(now, 1), 8), 0), 0),
+//           0,
+//         );
+//         end = setMilliseconds(
+//           setSeconds(setMinutes(setHours(now, 8), 0), 0),
+//           0,
+//         );
+//       } else {
+//         start = setMilliseconds(
+//           setSeconds(setMinutes(setHours(now, 8), 0), 0),
+//           0,
+//         );
+//         end = setMilliseconds(
+//           setSeconds(setMinutes(setHours(addDays(now, 1), 8), 0), 0),
+//           0,
+//         );
+//       }
+//       where.timestamp = { gte: start, lte: end };
+//     }
+//     if (period === 'weekly')
+//       where.timestamp = { gte: startOfWeek(now), lte: endOfWeek(now) };
+//     if (period === 'monthly')
+//       where.timestamp = { gte: startOfMonth(now), lte: endOfMonth(now) };
+//   } else if (startDate && endDate) {
+//     where.timestamp = { gte: startOfDay(startDate), lte: endOfDay(endDate) };
+//   }
+
+//   const data = await prisma.manualInput.findMany({
+//     where,
+//     include: { details: true, user: true },
+//     orderBy: { timestamp: 'desc' },
+//   });
+
+//   const flat = data.flatMap((item) =>
+//     item.details.map((detail) => ({
+//       username: item.user?.name ?? null,
+//       timestamp: item.timestamp?.toLocaleString('id-ID'),
+//       area: detail.area,
+//     })),
+//   );
+
+//   const parser = new Parser();
+//   return parser.parse(flat);
+// }
+
+export async function exportCsv(query: GetManualInputsQuery) {
+  const where: Prisma.ManualInputWhereInput = {};
+
+  if (query.userId) {
+    where.userId = query.userId;
+  }
+
+  // Hanya filter berdasarkan area jika query.area diisi (opsional, tergantung kebutuhan)
+  if (query.area) {
+    where.details = { some: { area: query.area } };
+  }
+
+  // Terapkan filter waktu dari helper atau rentang kustom.
+  const { period, startDate, endDate } = query;
+  // --- Logika filter waktu tetap sama ---
+  if (period) {
+    const now = new Date();
+    if (period === 'daily') {
+      const hour = now.getHours();
+      let start, end;
+      if (hour < 8) {
+        // ... (Logika subDays tetap sama)
+        start = setMilliseconds(
+          setSeconds(setMinutes(setHours(subDays(now, 1), 8), 0), 0),
+          0,
+        );
+        end = setMilliseconds(
+          setSeconds(setMinutes(setHours(now, 8), 0), 0),
+          0,
+        );
+      } else {
+        // ... (Logika addDays tetap sama)
+        start = setMilliseconds(
+          setSeconds(setMinutes(setHours(now, 8), 0), 0),
+          0,
+        );
+        end = setMilliseconds(
+          setSeconds(setMinutes(setHours(addDays(now, 1), 8), 0), 0),
+          0,
+        );
+      }
+      where.timestamp = { gte: start, lte: end };
+    }
+    if (period === 'weekly')
+      where.timestamp = { gte: startOfWeek(now), lte: endOfWeek(now) };
+    if (period === 'monthly')
+      where.timestamp = { gte: startOfMonth(now), lte: endOfMonth(now) };
+  } else if (startDate && endDate) {
+    // Penting: Pastikan startDate dan endDate diparse sebagai Date object jika mereka string
+    where.timestamp = {
+      gte: startOfDay(new Date(startDate)),
+      lte: endOfDay(new Date(endDate)),
+    };
+  }
+  // --- Akhir Logika filter waktu ---
+
+  // 1. Ambil SEMUA data (tanpa skip/take)
+  const data = await prisma.manualInput.findMany({
+    where,
+    include: { details: true, user: true },
+    orderBy: { timestamp: 'desc' },
+  });
+
+  // Jika data.length hanya 1 di hasil akhir, pastikan filter waktu di atas benar-benar mengembalikan banyak data.
+
+  // --- Transformasi Data (Flattening / Pivoting) ---
+  const flatData = data.map((item) => {
+    // **HILANGKAN BLOK PERTAMA (forEach) YANG BERPOTENSI BINGUNG**
+    // Karena kita sudah menggunakan pendekatan find() di bawah ini,
+    // Blok forEach yang Anda kirimkan tidak diperlukan lagi.
+
+    // --- SOLUSI PIVOT YANG BENAR (Berdasarkan Lookup/Find) ---
+    // Mencari data detail yang relevan
+    const mainPump = item.details.find((d) => d.area === 'main');
+    const pilotPump = item.details.find((d) => d.area === 'pilot');
+    const oilTemp = item.details.find((d) => d.area === 'oil');
+
+    // Mengembalikan objek data yang diratakan (flat)
+    return {
+      Waktu: item.timestamp?.toLocaleString('id-ID'),
+      Operator: item.user?.name ?? null,
+
+      // MAIN PUMP (Menggunakan optional chaining dan nullish coalescing)
+      Main_Ampere_R: mainPump?.ampere_r ?? '',
+      Main_Ampere_S: mainPump?.ampere_s ?? '',
+      Main_Ampere_T: mainPump?.ampere_t ?? '',
+      Main_Oil_Pressure: mainPump?.oil_pressure ?? '',
+
+      // PILOT PUMP
+      Pilot_Ampere_R: pilotPump?.ampere_r ?? '',
+      Pilot_Ampere_S: pilotPump?.ampere_s ?? '',
+      Pilot_Ampere_T: pilotPump?.ampere_t ?? '',
+      Pilot_Oil_Pressure: pilotPump?.oil_pressure ?? '',
+
+      // OIL TEMP
+      Oil_Temp: oilTemp?.oil_temperature ?? '',
+    };
+  });
+
+  // 4. Definisikan field (header) untuk Parser agar urutannya benar
+  const fields = [
+    'Waktu',
+    'Operator',
+    'Main_Ampere_R',
+    'Main_Ampere_S',
+    'Main_Ampere_T',
+    'Main_Oil_Pressure',
+    'Pilot_Ampere_R',
+    'Pilot_Ampere_S',
+    'Pilot_Ampere_T',
+    'Pilot_Oil_Pressure',
+    'Oil_Temp',
+  ];
+
+  // 5. Buat parser dengan field yang sudah ditentukan
+  const parser = new Parser({ fields });
+  return parser.parse(flatData);
 }

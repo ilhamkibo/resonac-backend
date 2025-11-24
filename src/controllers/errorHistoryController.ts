@@ -33,3 +33,15 @@ export const handleGetErrorHistoryComparison = asyncHandler(
     );
   },
 );
+
+// export const handleExportErrorHistoryCsv = asyncHandler(
+//   async (req: Request, res: Response) => {
+//     const validatedQuery = getManualInputsSchema.parse(req.query);
+//     const csv = await manualInputService.exportCsv(validatedQuery);
+
+//     res.header('Content-Type', 'text/csv');
+//     res.header('Content-Disposition', 'attachment; filename=manual_inputs.csv');
+
+//     return res.status(200).send(csv);
+//   },
+// );

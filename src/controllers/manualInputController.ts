@@ -36,3 +36,15 @@ export const handleGetManualInputs = asyncHandler(
     return successResponse(res, 'Manual inputs fetched successfully', result);
   },
 );
+
+export const handleExportManualInputsCsv = asyncHandler(
+  async (req: Request, res: Response) => {
+    const validatedQuery = getManualInputsSchema.parse(req.query);
+    const csv = await manualInputService.exportCsv(validatedQuery);
+
+    res.header('Content-Type', 'text/csv');
+    res.header('Content-Disposition', 'attachment; filename=manual_inputs.csv');
+
+    return res.status(200).send(csv);
+  },
+);
