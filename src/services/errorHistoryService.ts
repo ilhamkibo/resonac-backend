@@ -11,6 +11,7 @@ import {
   subWeeks,
   subMonths,
 } from 'date-fns';
+import { Parser } from 'json2csv';
 
 function calculateDateRange(query: ErrorHistoryQuery): {
   gte?: Date;
@@ -58,14 +59,6 @@ export async function getHistoryError(query: ErrorHistoryQuery) {
     }),
     prisma.errorHistory.count({ where }),
   ]);
-
-  // const data = await prisma.errorHistory.findMany({
-  //   where,
-  //   skip,
-  //   take,
-  //   orderBy: { timestamp: 'desc' },
-  // });
-  // const total = await prisma.errorHistory.count({ where });
 
   return {
     data,
@@ -192,4 +185,104 @@ export async function getErrorHistoryComparison() {
       byAreaParameter: areaWithParameters, // NEW STRUCTURE
     },
   };
+}
+
+// export async function exportCsv(query: ErrorHistoryQuery) {
+//   // 1. Inisialisasi where filter untuk ErrorHistory (BUKAN ManualInput)
+//   const where: Prisma.ErrorHistoryWhereInput = {};
+
+//   // 2. Terapkan filter tanggal menggunakan helper yang sama (calculateDateRange)
+//   const dateFilter = calculateDateRange(query);
+//   if (dateFilter.gte || dateFilter.lte) where.timestamp = dateFilter;
+
+//   // 3. Terapkan filter area dan parameter
+//   if (query.area) where.area = query.area;
+//   if (query.parameter) {
+//     where.parameter = Array.isArray(query.parameter)
+//       ? { in: query.parameter }
+//       : query.parameter;
+//   }
+
+//   // 4. Ambil SEMUA data ErrorHistory (tanpa skip/take)
+//   const data = await prisma.errorHistory.findMany({
+//     where,
+//     include: { threshold: true }, // Sertakan threshold untuk detail
+//     orderBy: { timestamp: 'desc' },
+//   });
+
+//   // 5. Transformasi Data (Flattening) ke format log error
+//   const flatData = data.map((item) => {
+//     return {
+//       Timestamp: item.timestamp.toLocaleString('id-ID'),
+//       Area: item.area ?? 'N/A',
+//       Parameter: item.parameter ?? 'N/A',
+//       'Thresholds (Min/Max)': `Min: ${item.threshold?.lowerLimit ?? 'N/A'} / Max: ${item.threshold?.upperLimit ?? 'N/A'}`,
+//       Value: item.value,
+//       Status: item.status ?? '',
+//     };
+//   });
+
+//   // 6. Definisikan field (header) untuk Parser agar urutannya benar
+//   const fields = [
+//     'Timestamp',
+//     'Area',
+//     'Parameter',
+//     'Thresholds (Min/Max)',
+//     'Value',
+//     'Status',
+//   ];
+
+//   // 7. Buat parser dan kembalikan CSV
+//   const parser = new Parser({ fields });
+//   return parser.parse(flatData);
+// }
+
+export async function exportCsv(query: ErrorHistoryQuery) {
+  const where: Prisma.ErrorHistoryWhereInput = {};
+
+  // Filter tanggal
+  const dateFilter = calculateDateRange(query);
+  if (dateFilter.gte || dateFilter.lte) where.timestamp = dateFilter;
+
+  // Filter area & parameter
+  if (query.area) where.area = query.area;
+  if (query.parameter) {
+    where.parameter = Array.isArray(query.parameter)
+      ? { in: query.parameter }
+      : query.parameter;
+  }
+
+  // Ambil SEMUA data (tanpa pagination)
+  const data = await prisma.errorHistory.findMany({
+    where,
+    include: { threshold: true },
+    orderBy: { timestamp: 'desc' },
+  });
+
+  // -- Flat / Pivoting --
+  const flatData = data.map((item) => {
+    return {
+      Timestamp: item.timestamp?.toLocaleString('id-ID') ?? '',
+      Area: item.area ?? '',
+      Parameter: item.parameter ?? '',
+      Min: item.threshold?.lowerLimit ?? '',
+      Max: item.threshold?.upperLimit ?? '',
+      Value: item.value ?? '',
+      Status: item.status ?? '',
+    };
+  });
+
+  // Header CSV sesuai urutan (mirip manual input)
+  const fields = [
+    'Timestamp',
+    'Area',
+    'Parameter',
+    'Min',
+    'Max',
+    'Value',
+    'Status',
+  ];
+
+  const parser = new Parser({ fields });
+  return parser.parse(flatData); // ⬅ return string CSV
 }

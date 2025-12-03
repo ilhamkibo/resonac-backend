@@ -3,6 +3,15 @@ import bcrypt from 'bcrypt';
 import { LoginSchema, RegisterSchema } from '../validators/authValidator';
 import { generateAccessToken } from '../lib/utils/jwt';
 
+class AppError extends Error {
+  statusCode: number;
+
+  constructor(message: string, statusCode = 400) {
+    super(message);
+    this.statusCode = statusCode;
+  }
+}
+
 export const loginUser = async (input: LoginSchema) => {
   const { email, password } = input;
 
@@ -15,15 +24,13 @@ export const loginUser = async (input: LoginSchema) => {
 
   // Cek user ada dan password cocok
   if (!user || !(await bcrypt.compare(password, user.password_hash))) {
-    // Pesan error sengaja dibuat sama untuk mencegah user enumeration
-    const error: any = new Error('Email atau password salah');
-    error.statusCode = 401;
-    throw error;
+    // 401 = Unauthorized
+    throw new AppError('Email atau password salah', 401);
   }
 
-  // Cek account sudah disetujui atau belum
+  // Cek apakah akun sudah disetujui admin
   if (!user.isApproved) {
-    throw new Error('Akun Anda belum disetujui oleh administrator');
+    throw new AppError('Akun Anda belum disetujui oleh administrator', 403);
   }
 
   // 4. ✅ [BEST PRACTICE] Buat token langsung di sini
@@ -61,7 +68,7 @@ export const registerUser = async (input: RegisterSchema) => {
   }
 
   const totalUser = await prisma.user.count();
-  if (totalUser >= 10) {
+  if (totalUser >= 11) {
     throw new Error('Pendaftaran sudah penuh');
   }
 

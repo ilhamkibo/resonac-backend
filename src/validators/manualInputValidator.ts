@@ -86,10 +86,6 @@ export const getManualInputsSchema = z
     startDate: z.coerce.date().optional(),
     endDate: z.coerce.date().optional(),
 
-    // Filter spesifik untuk manual inputs
-    userId: z.coerce.number().int().positive().optional(),
-    area: areaSchema.optional(),
-
     // Pagination
     page: z.coerce.number().min(1).default(1),
     limit: z.coerce.number().min(1).max(100).default(10),

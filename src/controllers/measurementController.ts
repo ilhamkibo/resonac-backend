@@ -29,3 +29,22 @@ export const handleGetAggregatedData = asyncHandler(
     );
   },
 );
+
+export const handleExportAggregatedCsv = asyncHandler(
+  async (req: Request, res: Response) => {
+    const parsed = getMeasurementsQuerySchema.parse(req.query);
+    const csv = await measurementService.exportAggregatedCsv(parsed);
+
+    const timestamp = new Date()
+      .toLocaleString('id-ID', { hour12: false })
+      .replace(/[\/:, ]+/g, '-');
+
+    res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+    res.setHeader(
+      'Content-Disposition',
+      `attachment; filename=mesurements-history-${timestamp}.csv`,
+    );
+
+    return res.status(200).send('\uFEFF' + csv);
+  },
+);

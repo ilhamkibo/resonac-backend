@@ -19,7 +19,7 @@ export const generateAccessToken = (
   const payload: JwtPayload = { userId, role, email, name };
 
   return jwt.sign(payload, ACCESS_TOKEN_SECRET, {
-    expiresIn: '1d',
+    expiresIn: '15m',
   });
 };
 

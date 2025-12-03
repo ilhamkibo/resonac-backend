@@ -1,16 +1,13 @@
 import { Request, Response } from 'express';
 import { errorHistoryQuerySchema } from '../validators/errorHistoryValidator';
-import {
-  getErrorHistoryComparison,
-  getHistoryError,
-} from '../services/errorHistoryService';
+import * as ErrorHistoryService from '../services/errorHistoryService';
 import { asyncHandler } from '../lib/utils/asyncHandler';
 import { successResponse } from '../lib/response/response';
 
 export const handleGetHistoryError = asyncHandler(
   async (req: Request, res: Response) => {
     const validatedQuery = errorHistoryQuerySchema.parse(req.query);
-    const result = await getHistoryError(validatedQuery);
+    const result = await ErrorHistoryService.getHistoryError(validatedQuery);
 
     return successResponse(
       res,
@@ -23,7 +20,7 @@ export const handleGetHistoryError = asyncHandler(
 
 export const handleGetErrorHistoryComparison = asyncHandler(
   async (req: Request, res: Response) => {
-    const data = await getErrorHistoryComparison();
+    const data = await ErrorHistoryService.getErrorHistoryComparison();
 
     return successResponse(
       res,
@@ -34,14 +31,15 @@ export const handleGetErrorHistoryComparison = asyncHandler(
   },
 );
 
-// export const handleExportErrorHistoryCsv = asyncHandler(
-//   async (req: Request, res: Response) => {
-//     const validatedQuery = getManualInputsSchema.parse(req.query);
-//     const csv = await manualInputService.exportCsv(validatedQuery);
+export const handleExportErrorHistoryCsv = asyncHandler(
+  async (req: Request, res: Response) => {
+    const validatedQuery = errorHistoryQuerySchema.parse(req.query);
+    const csv = await ErrorHistoryService.exportCsv(validatedQuery);
 
-//     res.header('Content-Type', 'text/csv');
-//     res.header('Content-Disposition', 'attachment; filename=manual_inputs.csv');
+    res.header('Content-Type', 'text/csv');
+    res.header('Content-Disposition', 'attachment; filename=error_history.csv');
 
-//     return res.status(200).send(csv);
-//   },
-// );
+    // Mengganti nama file menjadi "error_history.csv" agar lebih sesuai
+    return res.status(200).send(csv);
+  },
+);

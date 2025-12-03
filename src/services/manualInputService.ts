@@ -145,22 +145,6 @@ export async function findMany(query: GetManualInputsQuery) {
   // Siapkan objek 'where' yang akan dibangun secara dinamis.
   const where: Prisma.ManualInputWhereInput = {};
 
-  // --- Bangun Klausa Filter Dinamis ---
-
-  if (query.userId) {
-    where.userId = query.userId;
-  }
-
-  // Filter berdasarkan 'area' yang ada di tabel relasi 'details'.
-  // Ini adalah cara Prisma yang benar untuk memfilter parent berdasarkan data child.
-  if (query.area) {
-    where.details = {
-      some: {
-        area: query.area,
-      },
-    };
-  }
-
   // Terapkan filter waktu dari helper atau rentang kustom.
   const { period, startDate, endDate } = query;
   if (period) {
@@ -238,81 +222,8 @@ export async function findMany(query: GetManualInputsQuery) {
   };
 }
 
-// export async function exportCsv(query: GetManualInputsQuery) {
-//   const where: Prisma.ManualInputWhereInput = {};
-
-//   if (query.userId) {
-//     where.userId = query.userId;
-//   }
-
-//   if (query.area) {
-//     where.details = { some: { area: query.area } };
-//   }
-
-//   const { period, startDate, endDate } = query;
-//   if (period) {
-//     const now = new Date();
-//     if (period === 'daily') {
-//       const hour = now.getHours();
-//       let start, end;
-//       if (hour < 8) {
-//         start = setMilliseconds(
-//           setSeconds(setMinutes(setHours(subDays(now, 1), 8), 0), 0),
-//           0,
-//         );
-//         end = setMilliseconds(
-//           setSeconds(setMinutes(setHours(now, 8), 0), 0),
-//           0,
-//         );
-//       } else {
-//         start = setMilliseconds(
-//           setSeconds(setMinutes(setHours(now, 8), 0), 0),
-//           0,
-//         );
-//         end = setMilliseconds(
-//           setSeconds(setMinutes(setHours(addDays(now, 1), 8), 0), 0),
-//           0,
-//         );
-//       }
-//       where.timestamp = { gte: start, lte: end };
-//     }
-//     if (period === 'weekly')
-//       where.timestamp = { gte: startOfWeek(now), lte: endOfWeek(now) };
-//     if (period === 'monthly')
-//       where.timestamp = { gte: startOfMonth(now), lte: endOfMonth(now) };
-//   } else if (startDate && endDate) {
-//     where.timestamp = { gte: startOfDay(startDate), lte: endOfDay(endDate) };
-//   }
-
-//   const data = await prisma.manualInput.findMany({
-//     where,
-//     include: { details: true, user: true },
-//     orderBy: { timestamp: 'desc' },
-//   });
-
-//   const flat = data.flatMap((item) =>
-//     item.details.map((detail) => ({
-//       username: item.user?.name ?? null,
-//       timestamp: item.timestamp?.toLocaleString('id-ID'),
-//       area: detail.area,
-//     })),
-//   );
-
-//   const parser = new Parser();
-//   return parser.parse(flat);
-// }
-
 export async function exportCsv(query: GetManualInputsQuery) {
   const where: Prisma.ManualInputWhereInput = {};
-
-  if (query.userId) {
-    where.userId = query.userId;
-  }
-
-  // Hanya filter berdasarkan area jika query.area diisi (opsional, tergantung kebutuhan)
-  if (query.area) {
-    where.details = { some: { area: query.area } };
-  }
 
   // Terapkan filter waktu dari helper atau rentang kustom.
   const { period, startDate, endDate } = query;
@@ -361,6 +272,7 @@ export async function exportCsv(query: GetManualInputsQuery) {
   // 1. Ambil SEMUA data (tanpa skip/take)
   const data = await prisma.manualInput.findMany({
     where,
+    take: 500000,
     include: { details: true, user: true },
     orderBy: { timestamp: 'desc' },
   });
@@ -369,11 +281,6 @@ export async function exportCsv(query: GetManualInputsQuery) {
 
   // --- Transformasi Data (Flattening / Pivoting) ---
   const flatData = data.map((item) => {
-    // **HILANGKAN BLOK PERTAMA (forEach) YANG BERPOTENSI BINGUNG**
-    // Karena kita sudah menggunakan pendekatan find() di bawah ini,
-    // Blok forEach yang Anda kirimkan tidak diperlukan lagi.
-
-    // --- SOLUSI PIVOT YANG BENAR (Berdasarkan Lookup/Find) ---
     // Mencari data detail yang relevan
     const mainPump = item.details.find((d) => d.area === 'main');
     const pilotPump = item.details.find((d) => d.area === 'pilot');
@@ -385,19 +292,19 @@ export async function exportCsv(query: GetManualInputsQuery) {
       Operator: item.user?.name ?? null,
 
       // MAIN PUMP (Menggunakan optional chaining dan nullish coalescing)
-      Main_Ampere_R: mainPump?.ampere_r ?? '',
-      Main_Ampere_S: mainPump?.ampere_s ?? '',
-      Main_Ampere_T: mainPump?.ampere_t ?? '',
-      Main_Oil_Pressure: mainPump?.oil_pressure ?? '',
+      Main_Ampere_R: Number(mainPump?.ampere_r).toFixed(2) ?? 0,
+      Main_Ampere_S: Number(mainPump?.ampere_s).toFixed(2) ?? 0,
+      Main_Ampere_T: Number(mainPump?.ampere_t).toFixed(2) ?? 0,
+      Main_Oil_Pressure: Number(mainPump?.oil_pressure).toFixed(2) ?? 0,
 
       // PILOT PUMP
-      Pilot_Ampere_R: pilotPump?.ampere_r ?? '',
-      Pilot_Ampere_S: pilotPump?.ampere_s ?? '',
-      Pilot_Ampere_T: pilotPump?.ampere_t ?? '',
-      Pilot_Oil_Pressure: pilotPump?.oil_pressure ?? '',
+      Pilot_Ampere_R: Number(pilotPump?.ampere_r).toFixed(2) ?? 0,
+      Pilot_Ampere_S: Number(pilotPump?.ampere_s).toFixed(2) ?? 0,
+      Pilot_Ampere_T: Number(pilotPump?.ampere_t).toFixed(2) ?? 0,
+      Pilot_Oil_Pressure: Number(pilotPump?.oil_pressure).toFixed(2) ?? 0,
 
       // OIL TEMP
-      Oil_Temp: oilTemp?.oil_temperature ?? '',
+      Oil_Temp: Number(oilTemp?.oil_temperature).toFixed(2) ?? 0,
     };
   });
 

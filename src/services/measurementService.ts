@@ -1,13 +1,8 @@
 // src/services/thresholdService.ts
 import prisma from '../config/db';
-import {
-  subDays,
-  subHours,
-  subMonths,
-  differenceInDays,
-  differenceInHours,
-} from 'date-fns';
+import { subDays, subHours, subMonths, differenceInHours } from 'date-fns';
 import { GetMeasurementsQuery } from '../validators/measurementValidator';
+import { Parser } from 'json2csv';
 
 export async function getMeasurementDataDashboard(area: string = 'all') {
   const whereClause = area == 'all' ? {} : { area };
@@ -33,241 +28,6 @@ const METRIC_COLUMNS = [
   'oil_pressure',
   'oil_temperature',
 ];
-
-// v1 -> salah untuk day period
-// export async function getAggregatedData(query: GetMeasurementsQuery) {
-//   const { aggregationType, period, areas } = query;
-//   let { startDate, endDate } = query;
-
-//   // 1. Tentukan Rentang Waktu (Sama seperti sebelumnya)
-//   if (period) {
-//     const now = new Date();
-//     endDate = now.toISOString();
-//     if (period === 'hour') startDate = subHours(now, 1).toISOString();
-//     if (period === 'day') startDate = subDays(now, 1).toISOString();
-//     if (period === 'week') startDate = subDays(now, 7).toISOString();
-//     if (period === 'month') startDate = subMonths(now, 1).toISOString();
-//   }
-
-//   // 2. Pilih Tabel dan Granularity Secara Cerdas
-//   const start = new Date(startDate!);
-//   const end = new Date(endDate!);
-//   const durationInHours = differenceInHours(end, start);
-
-//   let tableName: string;
-//   let granularity: string;
-//   let useRawTable = false;
-
-//   // JIKA durasi kurang dari 2 jam, AMBIL DARI TABEL RAW untuk data real-time
-//   if (durationInHours < 2) {
-//     tableName = 'measurements'; // Nama tabel asli
-//     granularity = '10 seconds'; // Kita bisa agregasi per 10 detik
-//     useRawTable = true;
-//   } else if (durationInHours <= 48) {
-//     // Antara 2 jam - 2 hari
-//     tableName = 'measurement_minutely';
-//     granularity = '1 minute';
-//   } else if (durationInHours <= 720) {
-//     // Antara 2 hari - 30 hari
-//     tableName = 'measurement_hourly';
-//     granularity = '1 hour';
-//   } else {
-//     // Lebih dari 30 hari
-//     tableName = 'measurement_daily';
-//     granularity = '1 day';
-//   }
-
-//   // 3. Bangun Query Secara Dinamis Berdasarkan Jenis Tabel
-//   let selectClauses: string;
-//   let timeBucketColumn: string;
-
-//   if (useRawTable) {
-//     // LOGIKA UNTUK TABEL RAW `measurements`
-//     // Kita harus melakukan agregasi (AVG, MAX, MIN) dan time_bucket secara manual
-//     const aggregationFunc = aggregationType.toUpperCase(); // AVG, MAX, atau MIN
-//     selectClauses = METRIC_COLUMNS.map(
-//       (col) => `${aggregationFunc}(${col}) AS "${col}"`,
-//     ).join(', ');
-//     timeBucketColumn = `time_bucket('${granularity}', "timestamp")`;
-//   } else {
-//     // LOGIKA UNTUK TABEL AGREGASI (Sama seperti sebelumnya)
-//     selectClauses = METRIC_COLUMNS.map(
-//       (col) => `"${col}_${aggregationType}" AS "${col}"`,
-//     ).join(', ');
-//     timeBucketColumn = `"bucket"`;
-//   }
-
-//   const whereClauses = [
-//     `${useRawTable ? '"timestamp"' : '"bucket"'} BETWEEN $1 AND $2`,
-//   ];
-//   const queryParams: any[] = [start, end];
-
-//   if (areas && areas.length > 0) {
-//     whereClauses.push(`area = ANY($3)`);
-//     queryParams.push(areas);
-//   }
-
-//   const groupByClause = useRawTable ? `GROUP BY "timestamp", "area"` : '';
-
-//   const sqlQuery = `
-//       SELECT
-//         ${timeBucketColumn} AS "timestamp",
-//         "area",
-//         ${selectClauses}
-//       FROM ${tableName}
-//       WHERE ${whereClauses.join(' AND ')}
-//         ${groupByClause}
-//       ORDER BY "timestamp" ASC;
-// `;
-
-//   // 4. Eksekusi dan Format Hasil (Sama seperti sebelumnya)
-//   const results: any[] = await prisma.$queryRawUnsafe(sqlQuery, ...queryParams);
-
-//   const formattedData = results.reduce(
-//     (acc, row) => {
-//       const { area, ...metrics } = row;
-//       if (!acc[area]) acc[area] = [];
-//       for (const key in metrics) {
-//         if (metrics[key] !== null && !(metrics[key] instanceof Date)) {
-//           metrics[key] = Number(metrics[key]);
-//         }
-//       }
-//       acc[area].push(metrics);
-//       return acc;
-//     },
-//     {} as Record<string, any[]>,
-//   );
-
-//   return {
-//     query: {
-//       ...query,
-//       startDate,
-//       endDate,
-//       granularity: useRawTable ? 'realtime' : granularity,
-//       sourceTable: tableName,
-//     },
-//     data: formattedData,
-//   };
-// }
-
-// v2 -> Perbaikan day period aman grouping nya
-// export async function getAggregatedData(query: GetMeasurementsQuery) {
-//   const { aggregationType, period, areas } = query;
-//   let { startDate, endDate } = query;
-
-//   // 1. Tentukan Rentang Waktu (Sama seperti sebelumnya)
-//   if (period) {
-//     const now = new Date();
-//     endDate = now.toISOString();
-//     if (period === 'hour') startDate = subHours(now, 1).toISOString();
-//     if (period === 'day') startDate = subDays(now, 1).toISOString();
-//     if (period === 'week') startDate = subDays(now, 7).toISOString();
-//     if (period === 'month') startDate = subMonths(now, 1).toISOString();
-//   }
-
-//   // 2. Pilih Tabel dan Granularity Secara Cerdas
-//   const start = new Date(startDate!);
-//   const end = new Date(endDate!);
-//   const durationInHours = differenceInHours(end, start);
-
-//   let tableName: string;
-//   let granularity: string;
-//   let useRawTable = false;
-
-//   // JIKA durasi kurang dari 2 jam, AMBIL DARI TABEL RAW untuk data real-time
-//   if (durationInHours < 2) {
-//     tableName = 'measurements'; // Nama tabel asli
-//     granularity = '10 seconds'; // Kita bisa agregasi per 10 detik
-//     useRawTable = true;
-//   } else if (durationInHours <= 48) {
-//     // Antara 2 jam - 2 hari
-//     tableName = 'measurement_minutely';
-//     granularity = '1 minute';
-//   } else if (durationInHours <= 720) {
-//     // Antara 2 hari - 30 hari
-//     tableName = 'measurement_hourly';
-//     granularity = '1 hour';
-//   } else {
-//     // Lebih dari 30 hari
-//     tableName = 'measurement_daily';
-//     granularity = '1 day';
-//   }
-
-//   // 3. Bangun Query Secara Dinamis Berdasarkan Jenis Tabel
-//   let selectClauses: string;
-//   let timeBucketColumn: string;
-//   const timeBucketFormula = `time_bucket('${granularity}', "timestamp")`;
-
-//   if (useRawTable) {
-//     // LOGIKA UNTUK TABEL RAW `measurements`
-//     // Kita harus melakukan agregasi (AVG, MAX, MIN) dan time_bucket secara manual
-//     const aggregationFunc = aggregationType.toUpperCase(); // AVG, MAX, atau MIN
-//     selectClauses = METRIC_COLUMNS.map(
-//       (col) => `${aggregationFunc}(${col}) AS "${col}"`,
-//     ).join(', ');
-//     timeBucketColumn = timeBucketFormula;
-//   } else {
-//     // LOGIKA UNTUK TABEL AGREGASI (Sama seperti sebelumnya)
-//     selectClauses = METRIC_COLUMNS.map(
-//       (col) => `"${col}_${aggregationType}" AS "${col}"`,
-//     ).join(', ');
-//     timeBucketColumn = `"bucket"`;
-//   }
-
-//   const whereClauses = [
-//     `${useRawTable ? '"timestamp"' : '"bucket"'} BETWEEN $1 AND $2`,
-//   ];
-//   const queryParams: any[] = [start, end];
-
-//   if (areas && areas.length > 0) {
-//     whereClauses.push(`area = ANY($3)`);
-//     queryParams.push(areas);
-//   }
-
-//   const groupByClause = useRawTable
-//     ? `GROUP BY ${timeBucketFormula}, "area"` // 👈 Mengulang formula time_bucket
-//     : '';
-
-//   const sqlQuery = `
-//     SELECT
-//       ${timeBucketColumn} AS "timestamp",
-//       "area",
-//       ${selectClauses}
-//     FROM ${tableName}
-//     WHERE ${whereClauses.join(' AND ')}bananan
-//     ${groupByClause ? ` ${groupByClause} ` : ''}
-//     ORDER BY "timestamp" ASC;
-//   `;
-
-//   // 4. Eksekusi dan Format Hasil (Sama seperti sebelumnya)
-//   const results: any[] = await prisma.$queryRawUnsafe(sqlQuery, ...queryParams);
-
-//   const formattedData = results.reduce(
-//     (acc, row) => {
-//       const { area, ...metrics } = row;
-//       if (!acc[area]) acc[area] = [];
-//       for (const key in metrics) {
-//         if (metrics[key] !== null && !(metrics[key] instanceof Date)) {
-//           metrics[key] = Number(metrics[key]);
-//         }
-//       }
-//       acc[area].push(metrics);
-//       return acc;
-//     },
-//     {} as Record<string, any[]>,
-//   );
-
-//   return {
-//     query: {
-//       ...query,
-//       startDate,
-//       endDate,
-//       granularity: useRawTable ? 'realtime' : granularity,
-//       sourceTable: tableName,
-//     },
-//     data: formattedData,
-//   };
-// }
 
 // v3 -> bisa tanpa agregasi
 export async function getAggregatedData(query: GetMeasurementsQuery) {
@@ -319,12 +79,32 @@ export async function getAggregatedData(query: GetMeasurementsQuery) {
     const total = Number(countRes[0].total);
 
     // Format per area
-    const formatted = results.reduce<Record<string, any[]>>((acc, row) => {
-      const { area, ...metrics } = row;
-      if (!acc[area]) acc[area] = [];
-      acc[area].push({ ...metrics, area });
-      return acc;
-    }, {});
+    // const formatted = results.reduce<Record<string, any[]>>((acc, row) => {
+    //   const { area, ...metrics } = row;
+    //   if (!acc[area]) acc[area] = [];
+    //   acc[area].push({ ...metrics, area });
+    //   return acc;
+    // }, {});
+    const formatted = results.reduce<Record<string, Record<string, unknown>[]>>(
+      (acc, row) => {
+        const { area, ...metrics } = row;
+
+        if (!acc[area]) acc[area] = [];
+
+        // Round semua number → 2 decimal
+        const roundedMetrics = Object.fromEntries(
+          Object.entries(metrics).map(([key, value]) => [
+            key,
+            typeof value === 'number' ? Math.round(value * 100) / 100 : value,
+          ]),
+        );
+
+        acc[area].push({ ...roundedMetrics, area });
+
+        return acc;
+      },
+      {},
+    );
 
     return {
       // query: {
@@ -451,34 +231,44 @@ export async function getAggregatedData(query: GetMeasurementsQuery) {
   // Untuk tujuan pagination sederhana, kita asumsikan COUNT(*) tanpa GROUP BY sudah cukup.
   const total = Number(countRes[0].total);
 
-  // Format per area
+  // Format per area + round if AVG
   // const formatted = results.reduce<Record<string, any[]>>((acc, row) => {
   //   const { area, ...metrics } = row;
-  //   // Menghapus area dari metrics, tapi mempertahankan di objek key.
   //   if (!acc[area]) acc[area] = [];
-  //   delete (metrics as any).area; // Hapus jika terduplikasi saat select *
-  //   acc[area].push({ ...metrics });
+
+  //   const rounded =
+  //     aggregationType === 'avg'
+  //       ? Object.fromEntries(
+  //           Object.entries(metrics).map(([k, v]) => [
+  //             k,
+  //             typeof v === 'number' ? Math.round(v * 100) / 100 : v,
+  //           ]),
+  //         )
+  //       : metrics;
+
+  //   acc[area].push(rounded);
   //   return acc;
   // }, {});
+  const formatted = results.reduce<Record<string, Record<string, unknown>[]>>(
+    (acc, row) => {
+      const { area, ...metrics } = row;
 
-  // Format per area + round if AVG
-  const formatted = results.reduce<Record<string, any[]>>((acc, row) => {
-    const { area, ...metrics } = row;
-    if (!acc[area]) acc[area] = [];
+      if (!acc[area]) acc[area] = [];
 
-    const rounded =
-      aggregationType === 'avg'
-        ? Object.fromEntries(
-            Object.entries(metrics).map(([k, v]) => [
-              k,
-              typeof v === 'number' ? Math.round(v * 100) / 100 : v,
-            ]),
-          )
-        : metrics;
+      // round semua number → 2 decimal
+      const rounded = Object.fromEntries(
+        Object.entries(metrics).map(([key, value]) => [
+          key,
+          typeof value === 'number' ? Math.round(value * 100) / 100 : value,
+        ]),
+      );
 
-    acc[area].push(rounded);
-    return acc;
-  }, {});
+      acc[area].push(rounded);
+
+      return acc;
+    },
+    {},
+  );
 
   return {
     // query: {
@@ -491,4 +281,155 @@ export async function getAggregatedData(query: GetMeasurementsQuery) {
     meta: { page, limit, total, totalPages: Math.ceil(total / limit) },
     data: formatted,
   };
+}
+
+function flattenForCsv(rows: any[]) {
+  return rows.map((r) => ({
+    timestamp: r.timestamp,
+    area: r.area,
+    ...Object.fromEntries(METRIC_COLUMNS.map((col) => [col, r[col] ?? null])),
+  }));
+}
+
+export async function exportAggregatedCsv(query: GetMeasurementsQuery) {
+  let { aggregationType, period, startDate, endDate, areas } = query;
+
+  // Default area
+  areas = areas && areas.length > 0 ? areas : ['main'];
+
+  // ===== CASE 1 — RAW tanpa date & tanpa aggregation =====
+  if (!period && !startDate && !endDate) {
+    const params: any[] = [];
+    let paramIndex = 1;
+
+    const where = [`area = ANY($${paramIndex++})`];
+    params.push(areas);
+
+    const sqlQuery = `
+      SELECT *
+      FROM measurements
+      WHERE ${where.join(' AND ')}
+      ORDER BY "timestamp" DESC
+    `;
+
+    const results = await prisma.$queryRawUnsafe<any[]>(sqlQuery, ...params);
+    // Round semua angka → 2 decimal
+    const processed = results.map((row) => {
+      const rounded = Object.fromEntries(
+        Object.entries(row).map(([key, value]) => [
+          key,
+          typeof value === 'number' ? Math.round(value * 100) / 100 : value,
+        ]),
+      );
+      return rounded;
+    });
+
+    const rows = flattenForCsv(processed);
+    const parser = new Parser();
+
+    return parser.parse(rows);
+
+    // return flattenForCsv(results);
+  }
+
+  // ===== CASE 2 — Tentukan startDate & endDate dari period =====
+  if (period) {
+    const now = new Date();
+    endDate = now.toISOString();
+    if (period === 'hour') startDate = subHours(now, 1).toISOString();
+    if (period === 'day') startDate = subDays(now, 1).toISOString();
+    if (period === 'week') startDate = subDays(now, 7).toISOString();
+    if (period === 'month') startDate = subMonths(now, 1).toISOString();
+  }
+
+  const start = new Date(startDate!);
+  const end = new Date(endDate!);
+  const durationInHours = differenceInHours(end, start);
+
+  // ===== CASE 3 — Pilih source table & granularity =====
+  let tableName = 'measurements';
+  let granularity = '10 seconds';
+  let useRawTable = false;
+
+  if (!aggregationType) {
+    useRawTable = true;
+  } else if (durationInHours < 2) {
+    useRawTable = true;
+  } else if (durationInHours <= 48) {
+    tableName = 'measurement_minutely';
+    granularity = '1 minute';
+  } else if (durationInHours <= 720) {
+    tableName = 'measurement_hourly';
+    granularity = '1 hour';
+  } else {
+    tableName = 'measurement_daily';
+    granularity = '1 day';
+  }
+
+  let paramIndex = 1;
+  const whereClauses = [];
+  const queryParams: any[] = [];
+
+  whereClauses.push(
+    `${useRawTable ? '"timestamp"' : '"bucket"'} BETWEEN $${paramIndex++} AND $${paramIndex++}`,
+  );
+  queryParams.push(start, end);
+
+  whereClauses.push(`area = ANY($${paramIndex++})`);
+  queryParams.push(areas);
+
+  const timeBucketFormula = `time_bucket('${granularity}', "timestamp")`;
+  let selectClauses: string;
+  let timeBucketColumn: string;
+
+  if (useRawTable) {
+    if (!aggregationType) {
+      selectClauses = METRIC_COLUMNS.map((col) => `"${col}"`).join(', ');
+      timeBucketColumn = `"timestamp"`;
+    } else {
+      const aggFunc = aggregationType.toUpperCase();
+      selectClauses = METRIC_COLUMNS.map(
+        (col) => `${aggFunc}(${col}) AS "${col}"`,
+      ).join(', ');
+      timeBucketColumn = timeBucketFormula;
+    }
+  } else {
+    selectClauses = METRIC_COLUMNS.map(
+      (col) => `"${col}_${aggregationType}" AS "${col}"`,
+    ).join(', ');
+    timeBucketColumn = `"bucket"`;
+  }
+
+  const groupByClause =
+    useRawTable && aggregationType
+      ? `GROUP BY ${timeBucketFormula}, "area"`
+      : '';
+
+  const sqlQuery = `
+    SELECT
+      ${timeBucketColumn} AS "timestamp",
+      "area",
+      ${selectClauses}
+    FROM ${tableName}
+    WHERE ${whereClauses.join(' AND ')}
+    ${groupByClause}
+    ORDER BY "timestamp" DESC
+  `;
+
+  const results = await prisma.$queryRawUnsafe<any[]>(sqlQuery, ...queryParams);
+
+  // Round jika AVG
+  const processed = results.map((row) => {
+    if (aggregationType === 'avg') {
+      for (const k in row) {
+        if (typeof row[k] === 'number') row[k] = Math.round(row[k] * 100) / 100;
+      }
+    }
+    return row;
+  });
+
+  const row = flattenForCsv(processed);
+  const parser = new Parser();
+
+  return parser.parse(row);
 }

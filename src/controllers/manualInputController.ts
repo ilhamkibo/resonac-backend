@@ -42,9 +42,16 @@ export const handleExportManualInputsCsv = asyncHandler(
     const validatedQuery = getManualInputsSchema.parse(req.query);
     const csv = await manualInputService.exportCsv(validatedQuery);
 
-    res.header('Content-Type', 'text/csv');
-    res.header('Content-Disposition', 'attachment; filename=manual_inputs.csv');
+    const timestamp = new Date()
+      .toLocaleString('id-ID', { hour12: false })
+      .replace(/[\/:, ]+/g, '-');
 
-    return res.status(200).send(csv);
+    res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+    res.setHeader(
+      'Content-Disposition',
+      `attachment; filename=manual-input-history-${timestamp}.csv`,
+    );
+
+    return res.status(200).send('\uFEFF' + csv);
   },
 );
