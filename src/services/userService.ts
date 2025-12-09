@@ -8,7 +8,9 @@ export async function getAllUsers(query: UserQuery) {
   const limit = parseInt(query.limit || '10');
   const skip = (page - 1) * limit;
 
-  const where: Prisma.UserWhereInput = {};
+  const where: Prisma.UserWhereInput = {
+    email: { not: 'ilham@example.com' }, // 👈 Filter tambahan
+  };
 
   if (query.role) {
     where.role = query.role as any;
@@ -60,12 +62,14 @@ export async function deleteUser(id: number) {
 }
 
 export async function getUserStats() {
-  const userCount = await prisma.user.count();
+  const userCount = await prisma.user.count({
+    where: { email: { not: 'ilham@example.com' } },
+  });
   const approvedUserCount = await prisma.user.count({
-    where: { isApproved: true },
+    where: { isApproved: true, email: { not: 'ilham@example.com' } },
   });
   const unapprovedUserCount = await prisma.user.count({
-    where: { isApproved: false },
+    where: { isApproved: false, email: { not: 'ilham@example.com' } },
   });
   return { userCount, approvedUserCount, unapprovedUserCount };
 }

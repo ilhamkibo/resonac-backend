@@ -50,7 +50,7 @@ export async function getAggregatedData(query: GetMeasurementsQuery) {
   const offset = (page - 1) * limit;
 
   // =============== CASE 1 – No dates & no period → RAW full with pagination ===============
-  if (!period && !startDate && !endDate) {
+  if (!period && !startDate && !endDate) { 
     const where = [];
     const params: any[] = [];
     let paramIndex = 1;
@@ -78,13 +78,6 @@ export async function getAggregatedData(query: GetMeasurementsQuery) {
     const countRes = await prisma.$queryRawUnsafe<any[]>(totalQuery, ...params);
     const total = Number(countRes[0].total);
 
-    // Format per area
-    // const formatted = results.reduce<Record<string, any[]>>((acc, row) => {
-    //   const { area, ...metrics } = row;
-    //   if (!acc[area]) acc[area] = [];
-    //   acc[area].push({ ...metrics, area });
-    //   return acc;
-    // }, {});
     const formatted = results.reduce<Record<string, Record<string, unknown>[]>>(
       (acc, row) => {
         const { area, ...metrics } = row;
@@ -107,11 +100,6 @@ export async function getAggregatedData(query: GetMeasurementsQuery) {
     );
 
     return {
-      // query: {
-      //   ...query,
-      // sourceTable: 'measurements',
-      // granularity: 'raw'
-      // },
       meta: { page, limit, total, totalPages: Math.ceil(total / limit) },
       data: formatted,
     };
@@ -163,7 +151,6 @@ export async function getAggregatedData(query: GetMeasurementsQuery) {
   queryParams.push(start, end);
 
   // 2. Filter Area (Selalu $3)
-  // Tidak perlu cek areas && areas.length > 0 karena sudah di-default di awal
   whereClauses.push(`area = ANY($${paramIndex++})`);
   queryParams.push(areas);
 
@@ -219,36 +206,13 @@ export async function getAggregatedData(query: GetMeasurementsQuery) {
   `;
 
   const results = await prisma.$queryRawUnsafe<any[]>(sqlQuery, ...queryParams);
-  // Untuk count, kita hanya ingin tahu jumlah total baris,
-  // bukan jumlah total baris per area, jadi kita gunakan count sederhana
   const countRes = await prisma.$queryRawUnsafe<any[]>(
     countQuery,
     ...queryParams,
   );
 
-  // Jika CountQuery menghasilkan banyak baris (karena GROUP BY), kita harus menjumlahkannya,
-  // atau lebih baik, hapus GROUP BY pada count query, kecuali jika tujuannya menghitung total unik area.
-  // Untuk tujuan pagination sederhana, kita asumsikan COUNT(*) tanpa GROUP BY sudah cukup.
   const total = Number(countRes[0].total);
 
-  // Format per area + round if AVG
-  // const formatted = results.reduce<Record<string, any[]>>((acc, row) => {
-  //   const { area, ...metrics } = row;
-  //   if (!acc[area]) acc[area] = [];
-
-  //   const rounded =
-  //     aggregationType === 'avg'
-  //       ? Object.fromEntries(
-  //           Object.entries(metrics).map(([k, v]) => [
-  //             k,
-  //             typeof v === 'number' ? Math.round(v * 100) / 100 : v,
-  //           ]),
-  //         )
-  //       : metrics;
-
-  //   acc[area].push(rounded);
-  //   return acc;
-  // }, {});
   const formatted = results.reduce<Record<string, Record<string, unknown>[]>>(
     (acc, row) => {
       const { area, ...metrics } = row;
@@ -271,13 +235,6 @@ export async function getAggregatedData(query: GetMeasurementsQuery) {
   );
 
   return {
-    // query: {
-    //   ...query,
-    //   startDate,
-    //   endDate,
-    //   granularity,
-    //   sourceTable: tableName,
-    // },
     meta: { page, limit, total, totalPages: Math.ceil(total / limit) },
     data: formatted,
   };
